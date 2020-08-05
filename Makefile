@@ -1,6 +1,6 @@
 KEYFILE = "./.secrets/portal-test.json"
 
-portal: cmd/portal/main.go
+portal: cmd/portal/main.go portal.go
 	go build github.com/voutilad/portal/cmd/portal
 
 clean:
