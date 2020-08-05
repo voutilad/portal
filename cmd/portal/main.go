@@ -1,9 +1,8 @@
 package main
 
 import (
-	"cloud.google.com/go/storage"
-	"context"
 	"fmt"
+	"github.com/voutilad/portal"
 	"io"
 	"log"
 	"os"
@@ -25,26 +24,15 @@ func main() {
 	}
 	defer pipe.Close()
 
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	bkt := client.Bucket("my-dumb-bucket-69696")
-	obj := bkt.Object("gross-domestic-product-march-2020-quarter.csv")
-	src, err := obj.NewReader(ctx)
+	src, err := portal.NewGcsPortal("my-dumb-bucket-69696", "gross-domestic-product-march-2020-quarter.csv")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer src.Close()
 
-	for src.Remain() > 0 {
-		cnt, err := io.CopyN(pipe, src, blocksize)
-		if err != nil && err != io.EOF {
-			log.Fatal(err)
-		}
-		fmt.Fprintf(os.Stderr, "wrote %d bytes\n", cnt)
+	cnt, err := io.Copy(pipe, src)
+	if err != nil {
+		log.Fatal(err)
 	}
-
+	fmt.Fprintf(os.Stderr, "wrote %d bytes\n", cnt)
 }
