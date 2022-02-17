@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-const blocksize = 1 << 20
+const blocksize = (1 << 20) // 1 MiB
 
 func doit(config configItem, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -26,25 +26,35 @@ func doit(config configItem, wg *sync.WaitGroup) {
 	}
 	defer syscall.Unlink(path)
 
+again:
 	fmt.Printf("Opening portal to %s @ %s\n", portal, path)
 	pipe, err := os.OpenFile(path, os.O_WRONLY, 0666)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "os.OpenFile('%s'): %s\n", path, err)
 		return
 	}
-	defer pipe.Close()
 
 	fmt.Printf("Portal %s now transmitting...\n", portal)
-	cnt, err := io.Copy(pipe, portal)
+	cnt, _ := io.Copy(pipe, portal)
+	pipe.Close()
+
+	fmt.Printf("Wrote %d bytes from portal %s\n", cnt, portal)
+	portal, err = portal.Clone()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "io.Copy('%s', %s): %s\n", path, portal, err)
+		fmt.Fprintf(os.Stderr, "failed clone!\n")
 		return
 	}
-	fmt.Printf("Wrote %d bytes from portal %s\n", cnt, portal)
+	goto again
 }
 
 func checkForCredentials() {
+	// First, check for an explicit token
 	_, ok := os.LookupEnv("GOOGLE_APPLICATION_CREDENTIALS")
+	if ok {
+		fmt.Fprintf(os.Stdout, "Using auth token from environmet\n")
+		return
+	}
+
 	if !ok {
 		fmt.Fprintln(os.Stderr, "Could not find GOOGLE_APPLICATION_CREDENTIALS environment variable!")
 		usage()
@@ -114,17 +124,13 @@ func parseArgs(args []string) ([]configItem, error) {
 func main() {
 	var wg sync.WaitGroup
 
-	checkForCredentials()
-
 	config, err := parseArgs(os.Args[1:])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		usage()
 	}
-
 	if len(config) < 1 {
-		fmt.Fprintf(os.Stderr, "Could not find a valid config arg!?\n")
-		return
+		usage()
 	}
 
 	for _, cfg := range config {

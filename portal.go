@@ -16,6 +16,7 @@ import (
 type Portal interface {
 	io.ReadCloser
 	io.WriterTo
+	Clone() (Portal, error)
 }
 
 // Implementation of a Google Cloud Storage portal source
@@ -78,6 +79,11 @@ func (portal gcsPortal) WriteTo(w io.Writer) (n int64, err error) {
 	return cnt, nil
 }
 
+// XXX Not thread-safe
+func (portal gcsPortal) Clone() (Portal, error) {
+	return NewGcsPortal(portal.BucketName, portal.ObjectName)
+}
+
 func (portal gcsPortal) String() string {
 	return fmt.Sprintf("GCS { bucket: %s, object: %s }",
 		portal.BucketName, portal.ObjectName)
@@ -137,6 +143,10 @@ func (portal gsmPortal) Close() error {
 
 func (portal gsmPortal) WriteTo(w io.Writer) (n int64, err error) {
 	return portal.buffer.WriteTo(w)
+}
+
+func (portal gsmPortal) Clone() (Portal, error) {
+	return NewGsmPortal(portal.ProjectId, portal.SecretName, portal.Version)
 }
 
 func (portal gsmPortal) String() string {
