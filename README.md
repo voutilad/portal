@@ -58,9 +58,8 @@ Use `ctrl-c` or whatnot to interrupt and kill it :-)
 3. If you're using with `neo4j-admin import`, because of something (Java?) doing
    a dance to check for magic bytes indicating GZip or Zip files, it will most
    likely drop the first 4 bytes of each file. I recommend:
-
-   a. Use a single file that includes the header you want.
-   b. Make sure the first 4 characters can be possible throwaway.
+   - Use a single file that includes the header you want.
+   - Make sure the first 4 characters can be possible throwaway.
 
 For example:
 
