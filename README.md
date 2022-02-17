@@ -38,9 +38,8 @@ cora,9
 maple,6
 ```
 
-### 3. The Portal will Close
-You should see an update from the portal process and it should terminate once
-all files are consumed:
+### 3. The Portal will Recycle until you Kill It
+You should see an update from the portal process:
 
 ```
 ...
@@ -48,9 +47,27 @@ Portal GCS { bucket: my-bucket-name, object: hello.csv } now transmitting...
 Wrote 32 bytes from portal GCS { bucket: my-bucket-name, object: hello.csv }
 ```
 
-## Caveats
-1. No environmental auth (yet)
-2. Portal closes after all data is consumed...it does not restart or recreate
-   the fifo/pipe
-3. You must read sequentially, not randomly...this is a pipe, dammit!
+Use `ctrl-c` or whatnot to interrupt and kill it :-)
 
+
+## Caveats
+1. No environmental auth (yet!)
+2. You must read sequentially, not randomly...this is a pipe, dammit!
+3. If you're using with `neo4j-admin import`, because of something (Java?) doing
+   a dance to check for magic bytes indicating GZip or Zip files, it will most
+   likely drop the first 4 bytes of each file. I recommend:
+
+   a. Use a single file that includes the header you want.
+   b. Make sure the first 4 characters can be possible throwaway.
+
+For example:
+
+```
+$ head -n2 random-nodes.csv
+junkid:ID,name,age:int,:LABEL
+1,Person 1,1,FakePerson
+
+$ head -n2 random-rels.csv
+crap:START_ID,weight:float,:END_ID,:TYPE
+10420,0.184856666,10594,FOLLOWS
+```
