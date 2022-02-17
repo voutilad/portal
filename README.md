@@ -8,9 +8,11 @@ Just use portal!
 
 ## Building
 
+You need Go 1.16 or newer. Then:
+
 `$ make`
 
-Easy enough.
+Easy enough?
 
 ## Running
 
